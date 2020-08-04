@@ -36,9 +36,56 @@
 #include "util/logging.h"
 #include "util/mutexlock.h"
 
+#include "db/fh.h" // cgmin fh
+
 namespace leveldb {
 
 const int kNumNonTableCacheFiles = 10;
+/*
+FH::FH() //cgmin fh imple
+{
+  bs = 1000;
+  fs = 10;
+  fv = new unsigned char*[fs];
+  int i,j;
+  for (i=0;i<fs;i++)
+  {
+    fv[i] = new unsigned char[bs];
+    for (j=0;j<bs;j++)
+      fv[i][j] = 0;
+    }
+
+}
+FH::~FH()
+{
+  delete fv;
+}
+void FH::add(const Slice& key)
+{
+  int i,hv;
+  for (i=0;i<fs;i++)
+  {
+    hv = hash(i,key);
+    if (fv[i][hv] < 256)
+      fv[i][hv]++;
+  }
+}
+int FH::get(const Slice& key)
+{
+  int i,hv,sum;
+  sum = 0;
+  for (i=0;i<fs;i++)
+  {
+    hv = hash(i,key);
+    sum += fv[i][hv];
+  }
+  return 0;
+}
+int FH::hash(int fn,const Slice& key)
+{
+  return Hash(key.data(),key.size(),0xbc9f1d34+fn)%bs;
+}
+*/
 
 // Information kept for every waiting writer
 struct DBImpl::Writer {
@@ -58,6 +105,8 @@ struct DBImpl::CompactionState {
     uint64_t number;
     uint64_t file_size;
     InternalKey smallest, largest;
+
+    int fs; //cgmin output???
   };
 
   Output* current_output() { return &outputs[outputs.size() - 1]; }
@@ -502,7 +551,7 @@ Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
   Status s;
   {
     mutex_.Unlock();
-    s = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta);
+    s = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta, &fh); //cgmin
     mutex_.Lock();
   }
 
@@ -522,7 +571,7 @@ Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
       level = base->PickLevelForMemTableOutput(min_user_key, max_user_key);
     }
     edit->AddFile(level, meta.number, meta.file_size, meta.smallest,
-                  meta.largest);
+                  meta.largest,meta.fs); //cgmin fs
   }
 
   CompactionStats stats;
@@ -721,7 +770,7 @@ void DBImpl::BackgroundCompaction() {
     FileMetaData* f = c->input(0, 0);
     c->edit()->DeleteFile(c->level(), f->number);
     c->edit()->AddFile(c->level() + 1, f->number, f->file_size, f->smallest,
-                       f->largest);
+                       f->largest,f->fs); //cgmin fs
     status = versions_->LogAndApply(c->edit(), &mutex_);
     if (!status.ok()) {
       RecordBackgroundError(status);
@@ -870,7 +919,7 @@ Status DBImpl::InstallCompactionResults(CompactionState* compact) {
   for (size_t i = 0; i < compact->outputs.size(); i++) {
     const CompactionState::Output& out = compact->outputs[i];
     compact->compaction->edit()->AddFile(level + 1, out.number, out.file_size,
-                                         out.smallest, out.largest);
+                                         out.smallest, out.largest,out.fs); //cgmin fs
   }
   return versions_->LogAndApply(compact->compaction->edit(), &mutex_);
 }
@@ -1098,7 +1147,7 @@ int64_t DBImpl::TEST_MaxNextLevelOverlappingBytes() {
 }
 
 Status DBImpl::Get(const ReadOptions& options, const Slice& key,
-                   std::string* value) {
+                   std::string* value) { //cgmin get
   Status s;
   MutexLock l(&mutex_);
   SequenceNumber snapshot;
@@ -1118,6 +1167,8 @@ Status DBImpl::Get(const ReadOptions& options, const Slice& key,
 
   bool have_stat_update = false;
   Version::GetStats stats;
+
+  fh.add(key);//cgmin get add
 
   // Unlock while reading from files and memtables
   {
@@ -1189,6 +1240,7 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
   w.done = false;
 
   MutexLock l(&mutex_);
+  fh.add(WriteBatchInternal::Contents(updates)); //cgmin write add
   writers_.push_back(&w);
   while (!w.done && &w != writers_.front()) {
     w.cv.Wait();
@@ -1457,7 +1509,7 @@ void DBImpl::GetApproximateSizes(const Range* range, int n, uint64_t* sizes) {
 
 // Default implementations of convenience methods that subclasses of DB
 // can call if they wish
-Status DB::Put(const WriteOptions& opt, const Slice& key, const Slice& value) {
+Status DB::Put(const WriteOptions& opt, const Slice& key, const Slice& value) { //cgmin put
   WriteBatch batch;
   batch.Put(key, value);
   return Write(opt, &batch);

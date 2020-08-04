@@ -38,6 +38,8 @@
 #include "leveldb/db.h"
 #include "leveldb/env.h"
 
+//#include "db/fh.h" //cgmin fh
+
 namespace leveldb {
 
 namespace {
@@ -203,7 +205,7 @@ class Repairer {
     FileMetaData meta;
     meta.number = next_file_number_++;
     Iterator* iter = mem->NewIterator();
-    status = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta);
+    status = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta, NULL /*&fh*/); //cgmin repair ?
     delete iter;
     mem->Unref();
     mem = nullptr;
@@ -369,7 +371,7 @@ class Repairer {
       // TODO(opt): separate out into multiple levels
       const TableInfo& t = tables_[i];
       edit_.AddFile(0, t.meta.number, t.meta.file_size, t.meta.smallest,
-                    t.meta.largest);
+                    t.meta.largest,t.meta.fs); //cgmin fs
     }
 
     // fprintf(stderr, "NewDescriptor:\n%s\n", edit_.DebugString().c_str());

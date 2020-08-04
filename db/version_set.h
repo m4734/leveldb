@@ -151,7 +151,7 @@ class Version {
   int refs_;          // Number of live refs to this version
 
   // List of files per level
-  std::vector<FileMetaData*> files_[config::kNumLevels];
+  std::vector<FileMetaData*> files_[config::kNumLevels]; //cgmin version files metadata
 
   // Next file to compact based on seek stats.
   FileMetaData* file_to_compact_;

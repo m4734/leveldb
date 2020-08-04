@@ -18,6 +18,8 @@
 #include "port/port.h"
 #include "port/thread_annotations.h"
 
+#include "db/fh.h"
+
 namespace leveldb {
 
 class MemTable;
@@ -26,6 +28,23 @@ class Version;
 class VersionEdit;
 class VersionSet;
 
+class FH;
+/*
+class FH //cgmin FH
+{
+  public:
+    FH();
+    ~FH();
+
+    unsigned char** fv; //byte
+    int bs; // bucket size
+    int fs; // function size
+
+    void add(const Slice& key); //key
+    int get(const Slice& key); //key
+    int hash(int fn,const Slice& key);
+};
+*/
 class DBImpl : public DB {
  public:
   DBImpl(const Options& options, const std::string& dbname);
@@ -162,6 +181,9 @@ class DBImpl : public DB {
   const bool owns_info_log_;
   const bool owns_cache_;
   const std::string dbname_;
+
+  //cgmin fh;
+  FH fh;
 
   // table_cache_ provides its own synchronization
   TableCache* const table_cache_;
