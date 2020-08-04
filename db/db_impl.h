@@ -29,22 +29,7 @@ class VersionEdit;
 class VersionSet;
 
 class FH;
-/*
-class FH //cgmin FH
-{
-  public:
-    FH();
-    ~FH();
 
-    unsigned char** fv; //byte
-    int bs; // bucket size
-    int fs; // function size
-
-    void add(const Slice& key); //key
-    int get(const Slice& key); //key
-    int hash(int fn,const Slice& key);
-};
-*/
 class DBImpl : public DB {
  public:
   DBImpl(const Options& options, const std::string& dbname);
