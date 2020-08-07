@@ -1281,6 +1281,7 @@ Compaction* VersionSet::PickCompaction() { //cgmin pick
     assert(level + 1 < config::kNumLevels);
     c = new Compaction(options_, level);
 
+/*
     // Pick the first file that comes after compact_pointer_[level]
     for (size_t i = 0; i < current_->files_[level].size(); i++) { //cgmin pick file?
       FileMetaData* f = current_->files_[level][i];
@@ -1290,6 +1291,20 @@ Compaction* VersionSet::PickCompaction() { //cgmin pick
         break;
       }
     }
+*/
+
+    int min_fs=999999999;
+    FileMetaData *mf;
+    for (size_t i = 0; i < current_->files_[level].size(); i++) { //cgmin pick min fs
+      FileMetaData* f = current_->files_[level][i];
+      if (min_fs < f->fs)
+      {
+        min_fs = f->fs;
+        mf = f;
+      }
+    }
+    c->inputs_[0].push_back(mf);
+
     if (c->inputs_[0].empty()) {
       // Wrap-around to the beginning of the key space
       c->inputs_[0].push_back(current_->files_[level][0]);
