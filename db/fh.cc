@@ -8,13 +8,13 @@ namespace leveldb {
 
 FH::FH() //cgmin fh imple
 {
-  bs = 1000;
+  bs = 100000;
   fs = 10;
-  fv = new unsigned char*[fs];
+  fv = new unsigned int*[fs];
   int i,j;
   for (i=0;i<fs;i++)
   {
-    fv[i] = new unsigned char[bs];
+    fv[i] = new unsigned int[bs];
     for (j=0;j<bs;j++)
       fv[i][j] = 0;
     }
@@ -22,17 +22,28 @@ FH::FH() //cgmin fh imple
 }
 FH::~FH()
 {
+  int i;
+  for (i=0;i<fs;i++)
+    delete fv[i];
   delete fv;
 }
 void FH::add(const Slice& key)
 {
+//return;
   int i,hv;
+//  printf("????");
+//  mutex_.Lock();
   for (i=0;i<fs;i++)
   {
     hv = hash(i,key);
-    if (fv[i][hv] < 256)
+//hv = 0;
+//    if (fv[i][hv] < 256)
+    if (fv[i][hv] < 4294967295)
       fv[i][hv]++;
+
+//  printf("hv %d fv %d\n",hv,fv[i][hv]);
   }
+//  mutex_.Unlock();
 }
 int FH::get(const Slice& key)
 {
@@ -43,7 +54,7 @@ int FH::get(const Slice& key)
     hv = hash(i,key);
     sum += fv[i][hv];
   }
-  return 0;
+  return sum;
 }
 int FH::hash(int fn,const Slice& key)
 {

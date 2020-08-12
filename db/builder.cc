@@ -42,6 +42,7 @@ Status BuildTable(const std::string& dbname, Env* env, const Options& options,
       builder->Add(key, iter->value());
       meta->fs += fh->get(key); //cgmin fh get
     }
+//    printf("num %d meta fs %u\n",meta->number,meta->fs);
     }
     else
     {

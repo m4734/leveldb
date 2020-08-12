@@ -1181,6 +1181,7 @@ void DBImpl::ReleaseSnapshot(const Snapshot* snapshot) {
 
 // Convenience methods
 Status DBImpl::Put(const WriteOptions& o, const Slice& key, const Slice& val) {
+//  fh.add(key); //cgmin put add mutex?
   return DB::Put(o, key, val);
 }
 
@@ -1195,7 +1196,9 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
   w.done = false;
 
   MutexLock l(&mutex_);
-  fh.add(WriteBatchInternal::Contents(updates)); //cgmin write add
+
+//  fh.add(WriteBatchInternal::Contents(updates)); //cgmin write add
+
   writers_.push_back(&w);
   while (!w.done && &w != writers_.front()) {
     w.cv.Wait();
@@ -1228,7 +1231,7 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
         }
       }
       if (status.ok()) {
-        status = WriteBatchInternal::InsertInto(updates, mem_);
+        status = WriteBatchInternal::InsertInto(updates, mem_, &fh); //cgmin insert into fh
       }
       mutex_.Lock();
       if (sync_error) {

@@ -25,7 +25,7 @@ struct FileMetaData { //cgmin metadata?
   InternalKey smallest;  // Smallest internal key served by table
   InternalKey largest;   // Largest internal key served by table
 
-  int fs; //cgmin frequency sum 
+  unsigned int fs; //cgmin frequency sum 
 };
 
 class VersionEdit {

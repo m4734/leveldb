@@ -1294,7 +1294,7 @@ Compaction* VersionSet::PickCompaction() { //cgmin pick
 */
 
     int min_fs=999999999;
-    FileMetaData *mf;
+    FileMetaData *mf = current_->files_[level][0];
     for (size_t i = 0; i < current_->files_[level].size(); i++) { //cgmin pick min fs
       FileMetaData* f = current_->files_[level][i];
       if (min_fs < f->fs)

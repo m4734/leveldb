@@ -127,14 +127,38 @@ class MemTableInserter : public WriteBatch::Handler {
     sequence_++;
   }
 };
+
+class MemTableInserter2 : public MemTableInserter { //cgmin fhp
+  public:
+  FH * fhp;
+
+  virtual void Put(const Slice& key, const Slice& value) {
+    mem_->Add(sequence_, kTypeValue, key, value);
+//    if (fhp != NULL)
+      fhp->add(key); //cgmin put add
+    sequence_++;
+  }
+
+};
+
 }  // namespace
+
+Status WriteBatchInternal::InsertInto(const WriteBatch* b, MemTable* memtable, FH *fhp) {
+  MemTableInserter2 inserter;
+  inserter.sequence_ = WriteBatchInternal::Sequence(b);
+  inserter.mem_ = memtable;
+  inserter.fhp = fhp;
+  return b->Iterate(&inserter);
+}
 
 Status WriteBatchInternal::InsertInto(const WriteBatch* b, MemTable* memtable) {
   MemTableInserter inserter;
   inserter.sequence_ = WriteBatchInternal::Sequence(b);
   inserter.mem_ = memtable;
   return b->Iterate(&inserter);
+
 }
+
 
 void WriteBatchInternal::SetContents(WriteBatch* b, const Slice& contents) {
   assert(contents.size() >= kHeader);
