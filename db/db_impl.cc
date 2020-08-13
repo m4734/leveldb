@@ -874,7 +874,7 @@ Status DBImpl::InstallCompactionResults(CompactionState* compact) {
   for (size_t i = 0; i < compact->outputs.size(); i++) {
     const CompactionState::Output& out = compact->outputs[i];
     compact->compaction->edit()->AddFile(level + 1, out.number, out.file_size,
-                                         out.smallest, out.largest,out.fs); //cgmin fs
+                                         out.smallest, out.largest,out.fs); //cgmin compaction addfile fs
   }
   return versions_->LogAndApply(compact->compaction->edit(), &mutex_);
 }
@@ -988,6 +988,8 @@ Status DBImpl::DoCompactionWork(CompactionState* compact) {
       }
       compact->current_output()->largest.DecodeFrom(key);
       compact->builder->Add(key, input->value());
+
+      compact->current_output()->fs += fh.get(key); // cgmin compaction fs calc
 
       // Close output file if it is big enough
       if (compact->builder->FileSize() >=
